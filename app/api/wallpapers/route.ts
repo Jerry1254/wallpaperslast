@@ -49,9 +49,14 @@ export async function GET(request: Request) {
         shop_name: row.shop_name,
         image_count: row.image_count,
         created_at: row.created_at,
-        files: imageUrls.map((url: string, index: number) => {
-          const isVideo = url.toLowerCase().endsWith('.mp4')
-          const name = url.split('/').pop() || '未命名文件'
+        files: imageUrls.map((file: any, index: number) => {
+          const isVideo = typeof file === 'string' 
+            ? file.toLowerCase().endsWith('.mp4')
+            : file.url.toLowerCase().endsWith('.mp4')
+          const url = typeof file === 'string' ? file : file.url
+          const name = typeof file === 'string' 
+            ? file.split('/').pop() || '未命名文件'
+            : file.originalName || file.url.split('/').pop() || '未命名文件'
           return {
             id: `file-${index}`,
             name,
@@ -113,7 +118,10 @@ export async function POST(request: Request) {
       console.log('Transaction started')
 
       // 准备数据
-      const fileUrls = files.map(f => f.url)
+      const fileUrls = files.map(f => ({
+        url: f.url,
+        originalName: f.name
+      }))
       const thumbnailUrl = files[0].url
 
       console.log('Prepared data:', {

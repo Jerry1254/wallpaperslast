@@ -161,14 +161,14 @@ export function WallpaperList() {
                       {isVideo ? (
                         <VideoPreview
                           src={file.url}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-lg"
                         />
                       ) : (
                         <Image
                           src={file.url}
                           alt={wallpaper.name}
                           fill
-                          className="object-cover rounded-md"
+                          className="object-cover rounded-lg"
                         />
                       )}
                     </div>

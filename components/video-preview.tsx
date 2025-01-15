@@ -44,7 +44,7 @@ export function VideoPreview({ src, className, onPlay }: VideoPreviewProps) {
       <video
         ref={videoRef}
         src={src}
-        className={className}
+        className={`${className} rounded-lg`}
         controls={!isPaused}
       />
       {isPaused && (

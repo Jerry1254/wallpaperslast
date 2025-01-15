@@ -3,6 +3,7 @@
   "/dashboard/page": "app/dashboard/page.js",
   "/users/page": "app/users/page.js",
   "/wallpapers/page": "app/wallpapers/page.js",
-  "/api/wallpapers/[id]/route": "app/api/wallpapers/[id]/route.js",
-  "/api/wallpapers/route": "app/api/wallpapers/route.js"
+  "/api/shops/route": "app/api/shops/route.js",
+  "/api/wallpapers/route": "app/api/wallpapers/route.js",
+  "/api/upload/route": "app/api/upload/route.js"
 }
