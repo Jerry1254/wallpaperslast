@@ -40,15 +40,28 @@ export async function GET(request: Request) {
     const [rows] = await db.execute(query, params)
     
     // 处理返回数据
-    const processedRows = (rows as any[]).map(row => ({
-      ...row,
-      files: JSON.parse(row.image_urls).map((url: string, index: number) => ({
-        id: index,
-        url,
-        type: url.toLowerCase().endsWith('.mp4') ? 'video/mp4' : 'image/jpeg',
-        thumbnail: index === 0 ? row.thumbnail_url : undefined
-      }))
-    }))
+    const processedRows = (rows as any[]).map(row => {
+      const imageUrls = JSON.parse(row.image_urls)
+      return {
+        id: row.id,
+        name: row.name,
+        shopId: row.shop_id,
+        shop_name: row.shop_name,
+        image_count: row.image_count,
+        created_at: row.created_at,
+        files: imageUrls.map((url: string, index: number) => {
+          const isVideo = url.toLowerCase().endsWith('.mp4')
+          const name = url.split('/').pop() || '未命名文件'
+          return {
+            id: `file-${index}`,
+            name,
+            url,
+            type: isVideo ? 'video/mp4' : 'image/jpeg',
+            thumbnail: url
+          }
+        })
+      }
+    })
 
     return NextResponse.json(processedRows)
 
@@ -101,7 +114,7 @@ export async function POST(request: Request) {
 
       // 准备数据
       const fileUrls = files.map(f => f.url)
-      const thumbnailUrl = files[0].thumbnail || files[0].url
+      const thumbnailUrl = files[0].url
 
       console.log('Prepared data:', {
         name,
@@ -111,7 +124,7 @@ export async function POST(request: Request) {
         fileUrls
       })
 
-      // 创建壁纸记录，使用 CONVERT 函数确保字符集正确
+      // 创建壁纸记录
       const [result]: any = await connection.execute(
         `INSERT INTO wallpapers 
         (name, shop_id, image_count, thumbnail_url, image_urls, created_at) 
@@ -132,7 +145,10 @@ export async function POST(request: Request) {
         id: result.insertId,
         name,
         shopId,
-        files,
+        files: files.map(f => ({
+          ...f,
+          name: f.name || f.url.split('/').pop() || '未命名文件'
+        })),
         shop_name: shops[0].name
       }
       console.log('Sending response:', response)

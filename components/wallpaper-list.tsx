@@ -24,6 +24,7 @@ import {
 import { ConfirmDialog } from "./ui/confirm-dialog"
 import { UploadWallpaperModal } from "./upload-wallpaper-modal"
 import { Share2, Download, Edit, Trash2 } from "lucide-react"
+import { VideoPreview } from "./video-preview"
 
 interface Wallpaper {
   id: string
@@ -149,52 +150,78 @@ export function WallpaperList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentWallpapers.map((wallpaper) => (
-              <TableRow key={wallpaper.id}>
-                <TableCell>
-                  <div className="relative h-20 w-20">
-                    <Image
-                      src={wallpaper.thumbnail_url}
-                      alt={wallpaper.name}
-                      fill
-                      className="object-cover rounded-md"
-                    />
-                  </div>
-                </TableCell>
-                <TableCell>{wallpaper.name}</TableCell>
-                <TableCell>{wallpaper.shop_name}</TableCell>
-                <TableCell>{wallpaper.image_count}</TableCell>
-                <TableCell>{new Date(wallpaper.created_at).toLocaleString()}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleCopyShare(wallpaper)}
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleEdit(wallpaper)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        setDeletingWallpaperId(wallpaper.id)
-                        setIsDeleteDialogOpen(true)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+            {currentWallpapers.map((wallpaper) => {
+              const file = wallpaper.files[0]
+              const isVideo = file.type.startsWith('video/')
+
+              return (
+                <TableRow key={wallpaper.id}>
+                  <TableCell>
+                    <div className="relative h-[200px] w-[112.5px]">
+                      {isVideo ? (
+                        <VideoPreview
+                          src={file.url}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src={file.url}
+                          alt={wallpaper.name}
+                          fill
+                          className="object-cover rounded-md"
+                        />
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{wallpaper.name}</TableCell>
+                  <TableCell>{wallpaper.shop_name}</TableCell>
+                  <TableCell>{wallpaper.image_count}</TableCell>
+                  <TableCell>{new Date(wallpaper.created_at).toLocaleString()}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleCopyShare(wallpaper)}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleEdit(wallpaper)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const a = document.createElement('a')
+                          a.href = file.url
+                          a.download = file.name
+                          document.body.appendChild(a)
+                          a.click()
+                          document.body.removeChild(a)
+                        }}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          setDeletingWallpaperId(wallpaper.id)
+                          setIsDeleteDialogOpen(true)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </div>

@@ -14,7 +14,8 @@ import { FileUploader } from "./file-uploader"
 import { toast } from "@/components/ui/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AddShopModal } from "./add-shop-modal"
-import { PlayCircle } from "lucide-react"
+import { Trash2 } from "lucide-react"
+import { VideoPreview } from "./video-preview"
 
 interface Shop {
   id: string
@@ -33,6 +34,7 @@ interface WallpaperData {
   id?: string
   name: string
   shopId: string
+  shop_name?: string
   files: UploadedFile[]
 }
 
@@ -68,8 +70,23 @@ export function UploadWallpaperModal({
   useEffect(() => {
     if (open) {
       fetchShops()
+      // 如果是编辑模式，填充初始数据
+      if (mode === 'edit' && initialData) {
+        setWallpaperName(initialData.name)
+        setSelectedShopId(initialData.shopId)
+        setFiles(initialData.files.map(file => ({
+          ...file,
+          name: file.name || file.url.split('/').pop() || '未命名文件'
+        })))
+      } else {
+        // 如果是新增模式，重置表单
+        setWallpaperName("")
+        setSelectedShopId("")
+        setFiles([])
+        setErrors({})
+      }
     }
-  }, [open])
+  }, [open, mode, initialData])
 
   const fetchShops = async () => {
     try {
@@ -85,14 +102,6 @@ export function UploadWallpaperModal({
       })
     }
   }
-
-  useEffect(() => {
-    if (initialData) {
-      setWallpaperName(initialData.name)
-      setSelectedShopId(initialData.shopId)
-      setFiles(initialData.files)
-    }
-  }, [initialData])
 
   const validateForm = () => {
     const newErrors: typeof errors = {}
@@ -137,8 +146,14 @@ export function UploadWallpaperModal({
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/wallpapers', {
-        method: 'POST',
+      const endpoint = mode === 'edit' && initialData?.id 
+        ? `/api/wallpapers/${initialData.id}`
+        : '/api/wallpapers'
+
+      const method = mode === 'edit' ? 'PUT' : 'POST'
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -148,7 +163,8 @@ export function UploadWallpaperModal({
           files: files.map(file => ({
             url: file.url,
             type: file.type,
-            thumbnail: file.thumbnail || file.url
+            name: file.name,
+            thumbnail: file.thumbnail
           }))
         }),
       })
@@ -156,7 +172,7 @@ export function UploadWallpaperModal({
       const data = await response.json()
       
       if (!response.ok) {
-        throw new Error(data.error || '上传失败')
+        throw new Error(data.error || '操作失败')
       }
 
       toast({
@@ -176,7 +192,7 @@ export function UploadWallpaperModal({
       console.error('Upload error:', error)
       toast({
         variant: "destructive",
-        description: error.message || "上传失败，请重试",
+        description: error.message || "操作失败，请重试",
       })
     } finally {
       setIsLoading(false)
@@ -188,6 +204,23 @@ export function UploadWallpaperModal({
     if (playingVideo === fileId) {
       setPlayingVideo(null)
     }
+    // 如果删除后没有文件了，显示错误
+    if (files.length <= 1) {
+      setErrors(prev => ({ ...prev, files: "请上传至少一个文件" }))
+    }
+  }
+
+  const handleFileUpload = (file: UploadedFile) => {
+    const isVideo = file.type.startsWith('video/')
+    const fileName = file.name || file.url.split('/').pop() || '未命名文件'
+    
+    setFiles(prev => [...prev, {
+      ...file,
+      name: fileName,
+      thumbnail: file.url
+    }])
+    
+    setErrors(prev => ({ ...prev, files: undefined }))
   }
 
   return (
@@ -237,7 +270,7 @@ export function UploadWallpaperModal({
               <div className="space-y-2">
                 <Label>上传文件</Label>
                 <FileUploader
-                  onUpload={(file) => setFiles(prev => [...prev, file])}
+                  onUpload={handleFileUpload}
                   maxSize={100}
                   accept={{
                     'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
@@ -251,30 +284,12 @@ export function UploadWallpaperModal({
                 {files.map((file) => (
                   <div key={file.id} className="relative group">
                     {file.type.startsWith('video/') ? (
-                      <div className="relative aspect-[9/16] bg-gray-100 rounded-lg overflow-hidden">
-                        {playingVideo === file.id ? (
-                          <video
-                            src={file.url}
-                            controls
-                            autoPlay
-                            className="w-full h-full object-cover"
-                            onEnded={() => setPlayingVideo(null)}
-                          />
-                        ) : (
-                          <>
-                            <img
-                              src={file.thumbnail || file.url}
-                              alt={file.name}
-                              className="w-full h-full object-cover"
-                            />
-                            <button
-                              onClick={() => setPlayingVideo(file.id)}
-                              className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity opacity-0 group-hover:opacity-100"
-                            >
-                              <PlayCircle className="w-12 h-12 text-white" />
-                            </button>
-                          </>
-                        )}
+                      <div className="relative aspect-[9/16] bg-gray-100 rounded-lg overflow-hidden group">
+                        <VideoPreview
+                          src={file.url}
+                          className="w-full h-full object-cover"
+                          onPlay={() => setPlayingVideo(file.id)}
+                        />
                       </div>
                     ) : (
                       <div className="relative aspect-[9/16] bg-gray-100 rounded-lg overflow-hidden">
@@ -285,16 +300,17 @@ export function UploadWallpaperModal({
                         />
                       </div>
                     )}
-                    <p className="mt-1 text-sm truncate">{file.name}</p>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleFileDelete(file.id)}
-                    >
-                      <span className="sr-only">删除</span>
-                      ×
-                    </Button>
+                    <div className="mt-1 flex items-center justify-between">
+                      <p className="text-sm truncate flex-1">{file.name}</p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleFileDelete(file.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
