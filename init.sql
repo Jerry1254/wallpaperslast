@@ -15,21 +15,21 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- 店铺表
-CREATE TABLE `shops` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL COMMENT '店铺名称',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='店铺表';
+CREATE TABLE IF NOT EXISTS shops (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 -- 壁纸表
 CREATE TABLE `wallpapers` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL COMMENT '壁纸名称',
   `image_count` int NOT NULL DEFAULT '0' COMMENT '壁纸张数',
-  `thumbnail_url` varchar(255) NOT NULL COMMENT '缩略图地址',
-  `image_url` varchar(255) NOT NULL COMMENT '图片地址',
-  `shop_id` bigint unsigned NOT NULL COMMENT '所属店铺ID',
+  `thumbnail_url` TEXT NOT NULL COMMENT '缩略图地址',
+  `image_url` TEXT NOT NULL COMMENT '图片地址',
+  `shop_id` INT NOT NULL COMMENT '所属店铺ID',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_shop_id` (`shop_id`),

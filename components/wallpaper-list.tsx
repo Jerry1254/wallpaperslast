@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Copy, Pencil, Trash } from 'lucide-react'
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -23,230 +23,238 @@ import {
 } from "@/components/ui/pagination"
 import { ConfirmDialog } from "./ui/confirm-dialog"
 import { UploadWallpaperModal } from "./upload-wallpaper-modal"
+import { Share2, Download, Edit, Trash2 } from "lucide-react"
 
-// 示例数据
-const wallpapers = [
-  {
-    id: "1",
-    name: "山水风景",
-    thumbnail: "/placeholder.svg",
-    shareUrl: "https://example.com/wallpapers/1",
-    createdAt: "2024-01-11",
-    files: [
-      {
-        id: "file1",
-        name: "wallpaper1.jpg",
-        url: "/placeholder.svg",
-        type: "image/jpeg"
-      }
-    ]
-  },
-  {
-    id: "2",
-    name: "城市夜景",
-    thumbnail: "/placeholder.svg",
-    shareUrl: "https://example.com/wallpapers/2",
-    createdAt: "2024-01-11",
-    files: [
-      {
-        id: "file2",
-        name: "wallpaper2.jpg",
-        url: "/placeholder.svg",
-        type: "image/jpeg"
-      }
-    ]
-  },
-  {
-    id: "3",
-    name: "极光星空",
-    thumbnail: "/placeholder.svg",
-    shareUrl: "https://example.com/wallpapers/3",
-    createdAt: "2024-01-11",
-    files: [
-      {
-        id: "file3",
-        name: "wallpaper3.jpg",
-        url: "/placeholder.svg",
-        type: "image/jpeg"
-      }
-    ]
-  },
-]
+interface Wallpaper {
+  id: string
+  name: string
+  thumbnail_url: string
+  image_urls: string
+  created_at: string
+  shop_id: string
+  shop_name: string
+  image_count: number
+  files: {
+    id: string
+    url: string
+    type: string
+    thumbnail?: string
+  }[]
+}
 
 const ITEMS_PER_PAGE = 20
 
 export function WallpaperList() {
+  const [wallpapers, setWallpapers] = useState<Wallpaper[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deletingWallpaperId, setDeletingWallpaperId] = useState<string | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [editingWallpaper, setEditingWallpaper] = useState<typeof wallpapers[0] | null>(null)
+  const [editingWallpaper, setEditingWallpaper] = useState<Wallpaper | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   
   const totalPages = Math.ceil(wallpapers.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const currentWallpapers = wallpapers.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
-
-  const copyToClipboard = async (text: string) => {
+  // 获取壁纸列表
+  const fetchWallpapers = async () => {
     try {
-      await navigator.clipboard.writeText(text)
-      toast({
-        description: "分享链接已复制到剪贴板",
-      })
-    } catch (err) {
+      setIsLoading(true)
+      const response = await fetch('/api/wallpapers')
+      if (!response.ok) throw new Error('获取壁纸列表失败')
+      const data = await response.json()
+      setWallpapers(data)
+    } catch (error) {
+      console.error('Fetch wallpapers error:', error)
       toast({
         variant: "destructive",
-        description: "复制失败，请手动复制",
+        description: "获取壁纸列表失败",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleDeleteClick = (id: string) => {
-    setDeletingWallpaperId(id)
-    setIsDeleteDialogOpen(true)
-  }
-
-  const handleDeleteConfirm = () => {
-    if (deletingWallpaperId) {
-      // 实现删除逻辑
-      toast({
-        description: `删除壁纸 ID: ${deletingWallpaperId}`,
+  // 删除壁纸
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/wallpapers/${id}`, {
+        method: 'DELETE'
       })
+      if (!response.ok) throw new Error('删除壁纸失败')
+      
+      toast({
+        description: "删除成功",
+      })
+      
+      // 刷新列表
+      fetchWallpapers()
+    } catch (error) {
+      console.error('Delete wallpaper error:', error)
+      toast({
+        variant: "destructive",
+        description: "删除壁纸失败",
+      })
+    } finally {
       setIsDeleteDialogOpen(false)
       setDeletingWallpaperId(null)
     }
   }
 
-  const handleEdit = (wallpaper: typeof wallpapers[0]) => {
+  // 复制分享链接
+  const handleCopyShare = (wallpaper: Wallpaper) => {
+    const shareUrl = `${window.location.origin}/share/${wallpaper.id}`
+    navigator.clipboard.writeText(shareUrl)
+    toast({
+      description: "分享链接已复制",
+    })
+  }
+
+  // 处理编辑
+  const handleEdit = (wallpaper: Wallpaper) => {
     setEditingWallpaper(wallpaper)
     setIsEditModalOpen(true)
   }
 
+  // 处理编辑成功
+  const handleEditSuccess = () => {
+    setIsEditModalOpen(false)
+    setEditingWallpaper(null)
+    fetchWallpapers()
+  }
+
+  // 处理分页
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  // 初始加载
+  useEffect(() => {
+    fetchWallpapers()
+  }, [])
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">缩略图</TableHead>
-            <TableHead>名称</TableHead>
-            <TableHead>壁纸张数</TableHead>
-            <TableHead>分享链接</TableHead>
-            <TableHead>创建时间</TableHead>
-            <TableHead className="w-[100px]">操作</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {currentWallpapers.map((wallpaper) => (
-            <TableRow key={wallpaper.id}>
-              <TableCell>
-                <Image
-                  src={wallpaper.thumbnail}
-                  alt={wallpaper.name}
-                  width={80}
-                  height={45}
-                  className="rounded-md object-cover"
-                />
-              </TableCell>
-              <TableCell className="font-medium">{wallpaper.name}</TableCell>
-              <TableCell>{wallpaper.files.length}张</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <span className="truncate max-w-[200px]">
-                    {wallpaper.shareUrl}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyToClipboard(wallpaper.shareUrl)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-              <TableCell>{wallpaper.createdAt}</TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(wallpaper)}>
-                    <Pencil className="h-4 w-4" />
-                    <span className="sr-only">编辑</span>
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(wallpaper.id)}>
-                    <Trash className="h-4 w-4" />
-                    <span className="sr-only">删除</span>
-                  </Button>
-                </div>
-              </TableCell>
+    <div className="space-y-4">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>缩略图</TableHead>
+              <TableHead>名称</TableHead>
+              <TableHead>店铺</TableHead>
+              <TableHead>图片数量</TableHead>
+              <TableHead>创建时间</TableHead>
+              <TableHead className="text-right">操作</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="py-4 border-t">
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault()
-                  if (currentPage > 1) handlePageChange(currentPage - 1)
-                }}
-              >
-                上一页
-              </PaginationPrevious>
-            </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink 
-                  href="#" 
-                  isActive={currentPage === page}
+          </TableHeader>
+          <TableBody>
+            {currentWallpapers.map((wallpaper) => (
+              <TableRow key={wallpaper.id}>
+                <TableCell>
+                  <div className="relative h-20 w-20">
+                    <Image
+                      src={wallpaper.thumbnail_url}
+                      alt={wallpaper.name}
+                      fill
+                      className="object-cover rounded-md"
+                    />
+                  </div>
+                </TableCell>
+                <TableCell>{wallpaper.name}</TableCell>
+                <TableCell>{wallpaper.shop_name}</TableCell>
+                <TableCell>{wallpaper.image_count}</TableCell>
+                <TableCell>{new Date(wallpaper.created_at).toLocaleString()}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleCopyShare(wallpaper)}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEdit(wallpaper)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setDeletingWallpaperId(wallpaper.id)
+                        setIsDeleteDialogOpen(true)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
                   onClick={(e) => {
                     e.preventDefault()
-                    handlePageChange(page)
+                    if (currentPage > 1) handlePageChange(currentPage - 1)
                   }}
-                >
-                  {page}
-                </PaginationLink>
+                />
               </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationNext 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault()
-                  if (currentPage < totalPages) handlePageChange(currentPage + 1)
-                }}
-              >
-                下一页
-              </PaginationNext>
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      </div>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handlePageChange(page)
+                    }}
+                    isActive={page === currentPage}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (currentPage < totalPages) handlePageChange(currentPage + 1)
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       <ConfirmDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-        title="确认删除"
-        description="您确定要删除这个壁纸吗？此操作无法撤销。"
+        title="删除壁纸"
+        description="确定要删除这个壁纸吗？此操作不可恢复。"
+        onConfirm={() => deletingWallpaperId && handleDelete(deletingWallpaperId)}
       />
 
-      {editingWallpaper && (
-        <UploadWallpaperModal
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          mode="edit"
-          initialData={{
-            id: editingWallpaper.id,
-            name: editingWallpaper.name,
-            files: editingWallpaper.files
-          }}
-        />
-      )}
+      <UploadWallpaperModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        mode="edit"
+        initialData={editingWallpaper || undefined}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   )
 }
-

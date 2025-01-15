@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { AdminLayout } from "@/components/admin-layout"
 import { WallpaperList } from "@/components/wallpaper-list"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,12 @@ import { Input } from "@/components/ui/input"
 
 export default function WallpapersPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleUploadSuccess = useCallback(() => {
+    // 通过改变 key 来强制刷新列表
+    setRefreshKey(prev => prev + 1)
+  }, [])
 
   return (
     <AdminLayout>
@@ -21,13 +27,13 @@ export default function WallpapersPage() {
           />
           <Button onClick={() => setIsUploadModalOpen(true)}>新增壁纸</Button>
         </div>
-        <WallpaperList />
+        <WallpaperList key={refreshKey} />
         <UploadWallpaperModal
           open={isUploadModalOpen}
           onOpenChange={setIsUploadModalOpen}
+          onSuccess={handleUploadSuccess}
         />
       </div>
     </AdminLayout>
   )
 }
-
