@@ -197,12 +197,32 @@ export function WallpaperList() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          const a = document.createElement('a')
-                          a.href = file.url
-                          a.download = file.name
-                          document.body.appendChild(a)
-                          a.click()
-                          document.body.removeChild(a)
+                          // 确保 files 存在并且是数组
+                          if (!Array.isArray(wallpaper.files) || wallpaper.files.length === 0) {
+                            toast({
+                              variant: "destructive",
+                              description: "没有可下载的文件",
+                            })
+                            return
+                          }
+
+                          // 下载所有文件
+                          wallpaper.files.forEach((file, index) => {
+                            const a = document.createElement('a')
+                            a.href = file.url
+                            a.download = file.name
+                            document.body.appendChild(a)
+                            
+                            // 延迟点击下载，避免浏览器阻止多个下载
+                            setTimeout(() => {
+                              a.click()
+                              document.body.removeChild(a)
+                            }, index * 500) // 每个文件间隔 500ms
+                          })
+
+                          toast({
+                            description: `开始下载 ${wallpaper.files.length} 个文件`,
+                          })
                         }}
                       >
                         <Download className="h-4 w-4" />
