@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 富文本内容样式 */
+[style*="color: rgb(255, 153, 0)"] {
+  color: rgb(255, 153, 0) !important;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
 }

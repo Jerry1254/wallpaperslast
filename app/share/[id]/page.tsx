@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { Download } from "lucide-react"
 import { VideoPreview } from "@/components/video-preview"
+import parse from 'html-react-parser'
 
 interface SharePageData {
   id: number
@@ -116,7 +117,9 @@ export default function SharePage({ params }: { params: { id: number } }) {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">{data.wallpaperName}</h1>
       
-      <p className="text-gray-600 mb-6">{data.description}</p>
+      <div className="mb-6">
+        {parse(data.description)}
+      </div>
       
       <Button 
         className="mb-8 w-full" 

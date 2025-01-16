@@ -20,8 +20,7 @@ export async function GET(request: NextRequest) {
     // 获取壁纸和系统设置信息
     const [rows]: any = await connection.execute(
       `SELECT w.*, s.share_header_text, s.share_button_text
-       FROM wallpapers w
-       CROSS JOIN system_settings s
+       FROM wallpapers w, system_settings s
        WHERE w.id = ?
        LIMIT 1`,
       [wallpaperId]
@@ -39,18 +38,13 @@ export async function GET(request: NextRequest) {
     const wallpaper = rows[0]
     const imageUrls = JSON.parse(wallpaper.image_urls || wallpaper.image_url)
 
-    // 移除 HTML 标签
-    const stripHtml = (html: string) => {
-      return html.replace(/<[^>]*>/g, '')
-    }
-
     return NextResponse.json({
       code: 0,
       data: {
         id: wallpaper.id,
         wallpaperName: wallpaper.name,
-        description: stripHtml(wallpaper.share_header_text) || '欢迎使用壁纸分享系统',
-        buttonText: stripHtml(wallpaper.share_button_text) || '全部下载',
+        description: wallpaper.share_header_text,
+        buttonText: wallpaper.share_button_text,
         files: imageUrls.map((file: any, index: number) => {
           const url = typeof file === 'string' ? file : file.url
           const name = typeof file === 'string' 

@@ -1,11 +1,9 @@
 {
-  "/settings/page": "app/settings/page.js",
-  "/share/[id]/page": "app/share/[id]/page.js",
-  "/users/page": "app/users/page.js",
   "/wallpapers/page": "app/wallpapers/page.js",
   "/api/settings/route": "app/api/settings/route.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/api/share/route": "app/api/share/route.js",
-  "/api/users/route": "app/api/users/route.js",
-  "/api/wallpapers/route": "app/api/wallpapers/route.js"
+  "/settings/page": "app/settings/page.js",
+  "/api/wallpapers/route": "app/api/wallpapers/route.js",
+  "/share/[id]/page": "app/share/[id]/page.js",
+  "/api/share/route": "app/api/share/route.js"
 }

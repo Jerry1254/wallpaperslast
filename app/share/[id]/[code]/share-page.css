@@ -1,0 +1,15 @@
+/* 富文本内容样式 */
+.rich-content {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* 段落样式 */
+.rich-content p {
+  margin-bottom: 1rem;
+}
+
+/* 颜色样式 */
+.rich-content [style*="color: rgb(255, 153, 0)"] {
+  color: rgb(255, 153, 0) !important;
+}

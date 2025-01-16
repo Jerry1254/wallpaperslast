@@ -41,6 +41,12 @@ export async function POST(request: NextRequest) {
 
     // 更新系统设置
     await connection.execute(
+      `ALTER TABLE system_settings 
+       MODIFY COLUMN share_header_text TEXT,
+       MODIFY COLUMN share_button_text VARCHAR(255)`
+    )
+
+    await connection.execute(
       `UPDATE system_settings SET 
        share_header_text = ?,
        share_button_text = ?`,

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { Download } from "lucide-react"
 import { VideoPreview } from "@/components/video-preview"
+import parse from 'html-react-parser'
 
 interface SharePageData {
   id: number
@@ -118,12 +119,11 @@ export default function SharePage({ params }: { params: { code: string } }) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">{data.wallpaperName}</h1>
+      <h1 className="text-2xl font-bold mb-4">{parse(data.wallpaperName)}</h1>
       
-      <div 
-        className="text-gray-600 mb-6"
-        dangerouslySetInnerHTML={{ __html: data.description }}
-      />
+      <div className="mb-6">
+        {parse(data.description)}
+      </div>
       
       <Button 
         className="mb-8 w-full" 
@@ -131,7 +131,7 @@ export default function SharePage({ params }: { params: { code: string } }) {
         onClick={handleDownloadAll}
       >
         <Download className="mr-2 h-5 w-5" />
-        {data.buttonText}
+        {parse(data.buttonText)}
       </Button>
 
       <div className="grid grid-cols-2 gap-4">
@@ -154,7 +154,7 @@ export default function SharePage({ params }: { params: { code: string } }) {
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-sm truncate flex-1">{file.name}</span>
+              <span className="text-sm truncate flex-1">{parse(file.name)}</span>
               <Button
                 variant="outline"
                 size="icon"
