@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AddShopModal } from "./add-shop-modal"
 import { Trash2 } from "lucide-react"
 import { VideoPreview } from "./video-preview"
+import path from 'path'
 
 interface Shop {
   id: string
@@ -203,14 +204,41 @@ export function UploadWallpaperModal({
     }
   }
 
-  const handleFileDelete = (fileId: string) => {
-    setFiles(files.filter(file => file.id !== fileId))
-    if (playingVideo === fileId) {
-      setPlayingVideo(null)
-    }
-    // 如果删除后没有文件了，显示错误
-    if (files.length <= 1) {
-      setErrors(prev => ({ ...prev, files: "请上传至少一个文件" }))
+  const handleFileDelete = async (fileId: string) => {
+    const fileToDelete = files.find(file => file.id === fileId)
+    if (!fileToDelete) return
+
+    try {
+      // 从 url 中提取相对路径
+      const relativePath = fileToDelete.url.startsWith('/') ? fileToDelete.url.slice(1) : fileToDelete.url
+      const fullPath = path.join(process.cwd(), 'public', relativePath)
+
+      // 删除文件
+      await fetch('/api/upload/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: relativePath })
+      })
+
+      // 从状态中移除文件
+      setFiles(files.filter(file => file.id !== fileId))
+      if (playingVideo === fileId) {
+        setPlayingVideo(null)
+      }
+
+      // 如果删除后没有文件了，显示错误
+      if (files.length <= 1) {
+        setErrors(prev => ({ ...prev, files: "请上传至少一个文件" }))
+      }
+
+    } catch (error) {
+      console.error('Delete file error:', error)
+      toast({
+        variant: "destructive",
+        description: "删除文件失败",
+      })
     }
   }
 

@@ -35,9 +35,9 @@ export async function PUT(
       )
     }
 
-    // 检查壁纸是否存在
+    // 获取原来的壁纸信息
     const [wallpapers]: any = await connection.execute(
-      'SELECT id FROM wallpapers WHERE id = ?',
+      'SELECT id, image_urls FROM wallpapers WHERE id = ?',
       [params.id]
     )
 
@@ -48,9 +48,45 @@ export async function PUT(
       )
     }
 
-    // 准备数据
-    const fileUrls = files.map((f: any) => f.url)
-    const thumbnailUrl = files[0].url
+    // 获取原来的文件列表
+    const oldFiles = JSON.parse(wallpapers[0].image_urls)
+    console.log('Old files:', oldFiles)
+    
+    // 获取新的文件列表
+    const newFiles = files.map((f: any) => ({
+      url: f.url,
+      originalName: f.name || f.url.split('/').pop() || '未命名文件'
+    }))
+    console.log('New files:', newFiles)
+
+    // 找出被删除的文件
+    const deletedFiles = oldFiles.filter((oldFile: any) => 
+      !newFiles.some((newFile: any) => newFile.url === oldFile.url)
+    )
+    console.log('Deleted files:', deletedFiles)
+
+    // 删除被移除的文件
+    const publicDir = path.join(process.cwd(), 'public')
+    for (const file of deletedFiles) {
+      try {
+        const relativePath = file.url.startsWith('/') ? file.url.slice(1) : file.url
+        const fullPath = path.join(publicDir, relativePath)
+        
+        console.log('Attempting to delete:', fullPath)
+        
+        if (existsSync(fullPath)) {
+          await fs.unlink(fullPath)
+          console.log('Successfully deleted:', fullPath)
+        } else {
+          console.log('File does not exist:', fullPath)
+        }
+      } catch (error) {
+        console.error('Error deleting file:', {
+          url: file.url,
+          error: error.message
+        })
+      }
+    }
 
     // 更新壁纸记录
     await connection.execute(
@@ -65,8 +101,8 @@ export async function PUT(
         name,
         shopId,
         files.length,
-        thumbnailUrl,
-        JSON.stringify(fileUrls),
+        files[0].url,
+        JSON.stringify(newFiles),
         params.id
       ]
     )
@@ -75,11 +111,7 @@ export async function PUT(
       id: params.id,
       name,
       shopId,
-      files: files.map((f: any) => ({
-        ...f,
-        name: f.name || f.url.split('/').pop() || '未命名文件',
-        thumbnail: f.url
-      })),
+      files: newFiles,
       shop_name: shops[0].name
     })
 
