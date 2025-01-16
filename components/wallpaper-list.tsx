@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Copy, Pencil, Trash } from 'lucide-react'
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -125,6 +125,31 @@ export function WallpaperList() {
     fetchWallpapers()
   }
 
+  // 处理分享
+  const handleShare = useCallback(async (wallpaper: Wallpaper) => {
+    try {
+      // 获取系统设置
+      const settingsResponse = await fetch('/api/settings')
+      const settingsResult = await settingsResponse.json()
+      const shareHeaderText = settingsResult.data?.share_header_text || '请下载'
+      
+      const shareUrl = `${window.location.origin}/share/${wallpaper.id}`
+      const shareText = `${shareHeaderText} ${shareUrl}`
+      
+      // 复制分享文本
+      await navigator.clipboard.writeText(shareText)
+      
+      toast({
+        description: '分享链接已复制到剪贴板'
+      })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        description: '复制分享链接失败'
+      })
+    }
+  }, [toast])
+
   // 处理分页
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -183,6 +208,13 @@ export function WallpaperList() {
                         variant="outline"
                         size="icon"
                         onClick={() => handleCopyShare(wallpaper)}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleShare(wallpaper)}
                       >
                         <Share2 className="h-4 w-4" />
                       </Button>
