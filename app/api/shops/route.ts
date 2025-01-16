@@ -1,30 +1,40 @@
-import { NextResponse } from 'next/server'
-import mysql from 'mysql2/promise'
-
-const db = mysql.createPool({
-  host: '111.231.24.218',
-  port: 3306,
-  user: 'wmh',
-  password: 'Wmh@zq7261449',
-  database: 'wallpaper'
-})
+import { NextRequest, NextResponse } from "next/server"
+import { createConnection } from "@/lib/db"
 
 // 获取所有店铺
 export async function GET() {
   try {
-    const [rows] = await db.execute('SELECT id, name FROM shops ORDER BY id DESC')
-    return NextResponse.json(rows)
-  } catch (error) {
-    console.error('Get shops error:', error)
-    return NextResponse.json(
-      { error: '获取店铺列表失败' },
-      { status: 500 }
+    const connection = await createConnection()
+
+    // 获取所有店铺
+    const [rows]: any = await connection.execute(
+      'SELECT id, name FROM shops ORDER BY name'
     )
+
+    await connection.end()
+
+    // 确保 id 是字符串类型
+    const processedRows = rows.map((row: any) => ({
+      ...row,
+      id: String(row.id)
+    }))
+
+    return NextResponse.json({
+      code: 0,
+      data: processedRows
+    })
+  } catch (error: any) {
+    return NextResponse.json({
+      code: 1,
+      message: error.message
+    }, { status: 500 })
   }
 }
 
 // 创建新店铺
 export async function POST(request: Request) {
+  const connection = await createConnection()
+  
   try {
     const { name } = await request.json()
 
@@ -36,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     // 检查店铺名是否已存在
-    const [existingShops]: any = await db.execute(
+    const [existingShops]: any = await connection.execute(
       'SELECT id FROM shops WHERE name = ?',
       [name]
     )
@@ -49,10 +59,12 @@ export async function POST(request: Request) {
     }
 
     // 创建新店铺
-    const [result]: any = await db.execute(
+    const [result]: any = await connection.execute(
       'INSERT INTO shops (name) VALUES (?)',
       [name]
     )
+
+    await connection.end()
 
     return NextResponse.json({
       success: true,
@@ -66,5 +78,7 @@ export async function POST(request: Request) {
       { error: '创建店铺失败' },
       { status: 500 }
     )
+  } finally {
+    await connection.end()
   }
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server"
 import mysql from 'mysql2/promise'
 
 const db = mysql.createPool({
@@ -11,28 +11,28 @@ const db = mysql.createPool({
 })
 
 // 获取壁纸列表
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')
     const shopId = searchParams.get('shopId')
-    const keyword = searchParams.get('keyword')
 
     let query = `
-      SELECT w.*, s.name as shop_name 
-      FROM wallpapers w 
-      LEFT JOIN shops s ON w.shop_id = s.id 
+      SELECT w.*, s.name as shop_name
+      FROM wallpapers w
+      LEFT JOIN shops s ON w.shop_id = s.id
       WHERE 1=1
     `
     const params: any[] = []
 
+    if (search) {
+      query += ' AND w.name LIKE ?'
+      params.push(`%${search}%`)
+    }
+
     if (shopId) {
       query += ' AND w.shop_id = ?'
       params.push(shopId)
-    }
-
-    if (keyword) {
-      query += ' AND w.name LIKE ?'
-      params.push(`%${keyword}%`)
     }
 
     query += ' ORDER BY w.created_at DESC'
@@ -41,35 +41,38 @@ export async function GET(request: Request) {
     
     // 处理返回数据
     const processedRows = (rows as any[]).map(row => {
-      const imageUrls = JSON.parse(row.image_urls)
+      const imageUrls = JSON.parse(row.image_urls || row.image_url)
       return {
         id: row.id,
         name: row.name,
         shopId: row.shop_id,
         shop_name: row.shop_name,
-        image_count: row.image_count,
+        image_count: imageUrls.length,
         created_at: row.created_at,
-        files: imageUrls.map((file: any, index: number) => {
-          const isVideo = typeof file === 'string' 
-            ? file.toLowerCase().endsWith('.mp4')
-            : file.url.toLowerCase().endsWith('.mp4')
-          const url = typeof file === 'string' ? file : file.url
-          const name = typeof file === 'string' 
-            ? file.split('/').pop() || '未命名文件'
-            : file.originalName || file.url.split('/').pop() || '未命名文件'
-          return {
-            id: `file-${index}`,
-            name,
-            url,
-            type: isVideo ? 'video/mp4' : 'image/jpeg',
-            thumbnail: url
+        files: imageUrls.map((file: any) => {
+          if (typeof file === 'string') {
+            const name = file.split('/').pop() || '未命名文件'
+            return {
+              id: name,
+              name,
+              url: file,
+              type: file.toLowerCase().endsWith('.mp4') ? 'video/mp4' : 'image/jpeg',
+              thumbnail: file
+            }
+          } else {
+            return {
+              id: file.originalName || file.url.split('/').pop() || '未命名文件',
+              name: file.originalName || file.url.split('/').pop() || '未命名文件',
+              url: file.url,
+              type: file.url.toLowerCase().endsWith('.mp4') ? 'video/mp4' : 'image/jpeg',
+              thumbnail: file.url
+            }
           }
         })
       }
     })
 
     return NextResponse.json(processedRows)
-
   } catch (error) {
     console.error('Get wallpapers error:', error)
     return NextResponse.json(
@@ -80,7 +83,7 @@ export async function GET(request: Request) {
 }
 
 // 创建新壁纸
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const connection = await db.getConnection()
   
   try {
@@ -120,7 +123,7 @@ export async function POST(request: Request) {
       // 准备数据
       const fileUrls = files.map(f => ({
         url: f.url,
-        originalName: f.name
+        originalName: f.name || f.url.split('/').pop() || '未命名文件'
       }))
       const thumbnailUrl = files[0].url
 
@@ -136,7 +139,7 @@ export async function POST(request: Request) {
       const [result]: any = await connection.execute(
         `INSERT INTO wallpapers 
         (name, shop_id, image_count, thumbnail_url, image_urls, created_at) 
-        VALUES (?, ?, ?, CONVERT(? USING utf8mb4), CONVERT(? USING utf8mb4), NOW())`,
+        VALUES (?, ?, ?, ?, ?, NOW())`,
         [
           name,
           shopId,
@@ -153,9 +156,12 @@ export async function POST(request: Request) {
         id: result.insertId,
         name,
         shopId,
-        files: files.map(f => ({
-          ...f,
-          name: f.name || f.url.split('/').pop() || '未命名文件'
+        files: fileUrls.map(f => ({
+          id: f.originalName,
+          name: f.originalName,
+          url: f.url,
+          type: f.url.toLowerCase().endsWith('.mp4') ? 'video/mp4' : 'image/jpeg',
+          thumbnail: f.url
         })),
         shop_name: shops[0].name
       }
@@ -181,7 +187,7 @@ export async function POST(request: Request) {
 }
 
 // 删除壁纸
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const id = request.url.split('/').pop()
 

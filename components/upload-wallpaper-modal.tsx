@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -93,7 +93,11 @@ export function UploadWallpaperModal({
       const response = await fetch('/api/shops')
       if (!response.ok) throw new Error('Failed to fetch shops')
       const data = await response.json()
-      setShops(data)
+      if (data.code === 0) {
+        setShops(data.data)
+      } else {
+        throw new Error(data.message || 'Failed to fetch shops')
+      }
     } catch (error) {
       console.error('Fetch shops error:', error)
       toast({
@@ -223,6 +227,10 @@ export function UploadWallpaperModal({
     setErrors(prev => ({ ...prev, files: undefined }))
   }
 
+  const handleAddShopSuccess = useCallback(() => {
+    fetchShops()
+  }, [])
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -260,7 +268,15 @@ export function UploadWallpaperModal({
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button type="button" onClick={() => setIsAddShopModalOpen(true)}>
+                  <AddShopModal 
+                    open={isAddShopModalOpen} 
+                    onOpenChange={setIsAddShopModalOpen}
+                    onSuccess={handleAddShopSuccess}
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsAddShopModalOpen(true)}
+                  >
                     新增店铺
                   </Button>
                 </div>
@@ -339,7 +355,7 @@ export function UploadWallpaperModal({
       <AddShopModal
         open={isAddShopModalOpen}
         onOpenChange={setIsAddShopModalOpen}
-        onSuccess={fetchShops}
+        onSuccess={handleAddShopSuccess}
       />
     </>
   )

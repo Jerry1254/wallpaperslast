@@ -43,9 +43,14 @@ interface Wallpaper {
   }[]
 }
 
+interface WallpaperListProps {
+  searchQuery?: string
+  shopId?: number
+}
+
 const ITEMS_PER_PAGE = 20
 
-export function WallpaperList() {
+export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
   const [wallpapers, setWallpapers] = useState<Wallpaper[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -62,16 +67,25 @@ export function WallpaperList() {
   const fetchWallpapers = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/wallpapers')
-      if (!response.ok) throw new Error('获取壁纸列表失败')
+      const params = new URLSearchParams()
+      if (searchQuery) params.append('search', searchQuery)
+      if (shopId) params.append('shopId', String(shopId))
+      
+      const response = await fetch(`/api/wallpapers?${params.toString()}`)
       const data = await response.json()
-      setWallpapers(data)
+      
+      if (response.ok) {
+        setWallpapers(Array.isArray(data) ? data : [])
+      } else {
+        throw new Error(data.error || '获取壁纸列表失败')
+      }
     } catch (error) {
       console.error('Fetch wallpapers error:', error)
       toast({
         variant: "destructive",
-        description: "获取壁纸列表失败",
+        description: error instanceof Error ? error.message : "获取壁纸列表失败",
       })
+      setWallpapers([])
     } finally {
       setIsLoading(false)
     }
@@ -151,10 +165,10 @@ export function WallpaperList() {
     setCurrentPage(page)
   }
 
-  // 初始加载
+  // 初始加载和搜索条件变化时重新获取数据
   useEffect(() => {
     fetchWallpapers()
-  }, [])
+  }, [searchQuery, shopId])
 
   return (
     <div className="space-y-4">
