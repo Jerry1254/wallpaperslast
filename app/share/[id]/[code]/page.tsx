@@ -120,7 +120,10 @@ export default function SharePage({ params }: { params: { code: string } }) {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">{data.wallpaperName}</h1>
       
-      <p className="text-gray-600 mb-6">{data.description}</p>
+      <div 
+        className="text-gray-600 mb-6"
+        dangerouslySetInnerHTML={{ __html: data.description }}
+      />
       
       <Button 
         className="mb-8 w-full" 

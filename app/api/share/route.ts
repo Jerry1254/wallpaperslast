@@ -39,13 +39,18 @@ export async function GET(request: NextRequest) {
     const wallpaper = rows[0]
     const imageUrls = JSON.parse(wallpaper.image_urls || wallpaper.image_url)
 
+    // 移除 HTML 标签
+    const stripHtml = (html: string) => {
+      return html.replace(/<[^>]*>/g, '')
+    }
+
     return NextResponse.json({
       code: 0,
       data: {
         id: wallpaper.id,
         wallpaperName: wallpaper.name,
-        description: wallpaper.share_header_text || '欢迎使用壁纸分享系统',
-        buttonText: wallpaper.share_button_text || '全部下载',
+        description: stripHtml(wallpaper.share_header_text) || '欢迎使用壁纸分享系统',
+        buttonText: stripHtml(wallpaper.share_button_text) || '全部下载',
         files: imageUrls.map((file: any, index: number) => {
           const url = typeof file === 'string' ? file : file.url
           const name = typeof file === 'string' 

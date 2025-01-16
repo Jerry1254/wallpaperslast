@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AdminLayout } from "@/components/admin-layout"
 import dynamic from "next/dynamic"
-import "./quill.css"
+import "./editor.css"
 
 // 动态导入富文本编辑器
 const ReactQuill = dynamic(
@@ -35,7 +35,36 @@ interface Settings {
   share_button_text: string
 }
 
-export default function SettingsPage() {
+function QuillEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div className="h-40 w-full animate-pulse bg-gray-100 rounded-lg" />
+  }
+
+  return (
+    <ReactQuill
+      theme="snow"
+      value={value}
+      onChange={onChange}
+      modules={{
+        toolbar: [
+          [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'color': [] }, { 'background': [] }],
+          [{ 'align': [] }],
+          ['clean']
+        ]
+      }}
+    />
+  )
+}
+
+function SettingsContent() {
   const [settings, setSettings] = useState<Settings>({
     share_header_text: '',
     share_button_text: ''
@@ -100,58 +129,52 @@ export default function SettingsPage() {
   }
 
   return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>分享页设置</CardTitle>
+          <CardDescription>
+            设置分享页面的显示内容和分享按钮文本
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">分享页描述</label>
+            <QuillEditor
+              value={settings.share_header_text}
+              onChange={(value) => setSettings(prev => ({ ...prev, share_header_text: value }))}
+            />
+          </div>
+
+          <div className="space-y-2 mt-16">
+            <label className="text-sm font-medium">分享按钮文本</label>
+            <Input
+              value={settings.share_button_text}
+              onChange={(e) => setSettings(prev => ({ ...prev, share_button_text: e.target.value }))}
+              placeholder="请输入分享按钮文本"
+            />
+            <p className="text-sm text-gray-500">
+              此文本将与分享链接拼接，例如：{settings.share_button_text} http://example.com/share/123
+            </p>
+          </div>
+
+          <Button 
+            onClick={handleSave} 
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? '保存中...' : '保存设置'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
     <AdminLayout>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>分享页设置</CardTitle>
-            <CardDescription>
-              设置分享页面的显示内容和分享按钮文本
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">分享页描述</label>
-              {typeof window !== 'undefined' && (
-                <ReactQuill
-                  theme="snow"
-                  value={settings.share_header_text}
-                  onChange={(value) => setSettings(prev => ({ ...prev, share_header_text: value }))}
-                  modules={{
-                    toolbar: [
-                      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                      ['bold', 'italic', 'underline', 'strike'],
-                      [{ 'color': [] }, { 'background': [] }],
-                      [{ 'align': [] }],
-                      ['clean']
-                    ]
-                  }}
-                />
-              )}
-            </div>
-
-            <div className="space-y-2 mt-16">
-              <label className="text-sm font-medium">分享按钮文本</label>
-              <Input
-                value={settings.share_button_text}
-                onChange={(e) => setSettings(prev => ({ ...prev, share_button_text: e.target.value }))}
-                placeholder="请输入分享按钮文本"
-              />
-              <p className="text-sm text-gray-500">
-                此文本将与分享链接拼接，例如：{settings.share_button_text} http://example.com/share/123
-              </p>
-            </div>
-
-            <Button 
-              onClick={handleSave} 
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? '保存中...' : '保存设置'}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <SettingsContent />
     </AdminLayout>
   )
 }

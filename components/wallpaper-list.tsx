@@ -78,38 +78,34 @@ export function WallpaperList() {
   }
 
   // 删除壁纸
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!deletingWallpaperId) return
+
     try {
-      const response = await fetch(`/api/wallpapers/${id}`, {
+      const response = await fetch(`/api/wallpapers/${deletingWallpaperId}`, {
         method: 'DELETE'
       })
-      if (!response.ok) throw new Error('删除壁纸失败')
-      
-      toast({
-        description: "删除成功",
-      })
-      
-      // 刷新列表
-      fetchWallpapers()
+
+      if (response.ok) {
+        toast({
+          description: "壁纸已删除",
+        })
+        fetchWallpapers()
+      } else {
+        toast({
+          variant: "destructive",
+          description: "删除失败",
+        })
+      }
     } catch (error) {
-      console.error('Delete wallpaper error:', error)
       toast({
         variant: "destructive",
-        description: "删除壁纸失败",
+        description: "删除失败",
       })
     } finally {
       setIsDeleteDialogOpen(false)
       setDeletingWallpaperId(null)
     }
-  }
-
-  // 复制分享链接
-  const handleCopyShare = (wallpaper: Wallpaper) => {
-    const shareUrl = `${window.location.origin}/share/${wallpaper.id}`
-    navigator.clipboard.writeText(shareUrl)
-    toast({
-      description: "分享链接已复制",
-    })
   }
 
   // 处理编辑
@@ -131,10 +127,10 @@ export function WallpaperList() {
       // 获取系统设置
       const settingsResponse = await fetch('/api/settings')
       const settingsResult = await settingsResponse.json()
-      const shareHeaderText = settingsResult.data?.share_header_text || '请下载'
+      const shareButtonText = settingsResult.data?.share_button_text || '点击下载'
       
       const shareUrl = `${window.location.origin}/share/${wallpaper.id}`
-      const shareText = `${shareHeaderText} ${shareUrl}`
+      const shareText = `${shareButtonText} ${shareUrl}`
       
       // 复制分享文本
       await navigator.clipboard.writeText(shareText)
@@ -204,13 +200,6 @@ export function WallpaperList() {
                   <TableCell>{new Date(wallpaper.created_at).toLocaleString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleCopyShare(wallpaper)}
-                      >
-                        <Share2 className="h-4 w-4" />
-                      </Button>
                       <Button
                         variant="outline"
                         size="icon"
@@ -324,7 +313,7 @@ export function WallpaperList() {
         onOpenChange={setIsDeleteDialogOpen}
         title="删除壁纸"
         description="确定要删除这个壁纸吗？此操作不可恢复。"
-        onConfirm={() => deletingWallpaperId && handleDelete(deletingWallpaperId)}
+        onConfirm={() => deletingWallpaperId && handleDelete()}
       />
 
       <UploadWallpaperModal
