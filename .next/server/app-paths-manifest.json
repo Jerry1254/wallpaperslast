@@ -1,6 +1,8 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
+  "/api/settings/route": "app/api/settings/route.js",
   "/wallpapers/page": "app/wallpapers/page.js",
-  "/users/page": "app/users/page.js",
-  "/share/[id]/page": "app/share/[id]/page.js"
+  "/settings/page": "app/settings/page.js",
+  "/share/[id]/page": "app/share/[id]/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/users/page": "app/users/page.js"
 }

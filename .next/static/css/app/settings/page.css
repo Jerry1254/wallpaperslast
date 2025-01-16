@@ -1,0 +1,297 @@
+/*!********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./app/settings/quill.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************/
+/* 基础样式 */
+.ql-container {
+  box-sizing: border-box;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  height: 100%;
+  margin: 0px;
+  position: relative;
+}
+
+.ql-container.ql-disabled .ql-tooltip {
+  visibility: hidden;
+}
+
+.ql-container.ql-disabled .ql-editor ul[data-checked] > li::before {
+  pointer-events: none;
+}
+
+.ql-clipboard {
+  left: -100000px;
+  height: 1px;
+  overflow-y: hidden;
+  position: absolute;
+  top: 50%;
+}
+
+.ql-clipboard p {
+  margin: 0;
+  padding: 0;
+}
+
+.ql-editor {
+  box-sizing: border-box;
+  line-height: 1.42;
+  height: 100%;
+  outline: none;
+  overflow-y: auto;
+  padding: 12px 15px;
+  tab-size: 4;
+  -moz-tab-size: 4;
+  text-align: left;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.ql-editor > * {
+  cursor: text;
+}
+
+.ql-editor p,
+.ql-editor ol,
+.ql-editor ul,
+.ql-editor pre,
+.ql-editor blockquote,
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor h4,
+.ql-editor h5,
+.ql-editor h6 {
+  margin: 0;
+  padding: 0;
+  counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+}
+
+.ql-editor h1 {
+  font-size: 2em;
+}
+
+.ql-editor h2 {
+  font-size: 1.5em;
+}
+
+.ql-editor h3 {
+  font-size: 1.17em;
+}
+
+.ql-editor h4 {
+  font-size: 1em;
+}
+
+.ql-editor h5 {
+  font-size: 0.83em;
+}
+
+.ql-editor h6 {
+  font-size: 0.67em;
+}
+
+/* 工具栏样式 */
+.ql-toolbar {
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  padding: 8px;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+.ql-toolbar:after {
+  clear: both;
+  content: '';
+  display: table;
+}
+
+.ql-toolbar button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-block;
+  float: left;
+  height: 24px;
+  padding: 3px 5px;
+  width: 28px;
+}
+
+.ql-toolbar button svg {
+  float: left;
+  height: 100%;
+}
+
+.ql-toolbar button:active:hover {
+  outline: none;
+}
+
+.ql-toolbar input.ql-image[type=file] {
+  display: none;
+}
+
+.ql-toolbar button:hover,
+.ql-toolbar button:focus,
+.ql-toolbar button.ql-active,
+.ql-toolbar .ql-picker-label:hover,
+.ql-toolbar .ql-picker-label.ql-active,
+.ql-toolbar .ql-picker-item:hover,
+.ql-toolbar .ql-picker-item.ql-selected {
+  color: #06c;
+}
+
+.ql-toolbar button:hover .ql-fill,
+.ql-toolbar button:focus .ql-fill,
+.ql-toolbar button.ql-active .ql-fill,
+.ql-toolbar .ql-picker-label:hover .ql-fill,
+.ql-toolbar .ql-picker-label.ql-active .ql-fill,
+.ql-toolbar .ql-picker-item:hover .ql-fill,
+.ql-toolbar .ql-picker-item.ql-selected .ql-fill,
+.ql-toolbar button:hover .ql-stroke.ql-fill,
+.ql-toolbar button:focus .ql-stroke.ql-fill,
+.ql-toolbar button.ql-active .ql-stroke.ql-fill,
+.ql-toolbar .ql-picker-label:hover .ql-stroke.ql-fill,
+.ql-toolbar .ql-picker-label.ql-active .ql-stroke.ql-fill,
+.ql-toolbar .ql-picker-item:hover .ql-stroke.ql-fill,
+.ql-toolbar .ql-picker-item.ql-selected .ql-stroke.ql-fill {
+  fill: #06c;
+}
+
+.ql-toolbar button:hover .ql-stroke,
+.ql-toolbar button:focus .ql-stroke,
+.ql-toolbar button.ql-active .ql-stroke,
+.ql-toolbar .ql-picker-label:hover .ql-stroke,
+.ql-toolbar .ql-picker-label.ql-active .ql-stroke,
+.ql-toolbar .ql-picker-item:hover .ql-stroke,
+.ql-toolbar .ql-picker-item.ql-selected .ql-stroke,
+.ql-toolbar button:hover .ql-stroke-miter,
+.ql-toolbar button:focus .ql-stroke-miter,
+.ql-toolbar button.ql-active .ql-stroke-miter,
+.ql-toolbar .ql-picker-label:hover .ql-stroke-miter,
+.ql-toolbar .ql-picker-label.ql-active .ql-stroke-miter,
+.ql-toolbar .ql-picker-item:hover .ql-stroke-miter,
+.ql-toolbar .ql-picker-item.ql-selected .ql-stroke-miter {
+  stroke: #06c;
+}
+
+/* 编辑器容器样式 */
+.ql-container {
+  box-sizing: border-box;
+  font-size: 1rem;
+  height: 100%;
+  margin: 0px;
+  position: relative;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.ql-container.ql-disabled .ql-tooltip {
+  visibility: hidden;
+}
+
+/* 编辑器内容区域样式 */
+.ql-editor {
+  box-sizing: border-box;
+  min-height: 200px;
+  padding: 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* 编辑器内容样式 */
+.ql-editor p {
+  margin-bottom: 1rem;
+}
+
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor h4,
+.ql-editor h5,
+.ql-editor h6 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.ql-editor strong {
+  font-weight: 600;
+}
+
+.ql-editor em {
+  font-style: italic;
+}
+
+.ql-editor u {
+  text-decoration: underline;
+}
+
+.ql-editor s {
+  text-decoration: line-through;
+}
+
+/* 工具栏按钮样式 */
+.ql-snow.ql-toolbar button,
+.ql-snow .ql-toolbar button {
+  padding: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+}
+
+.ql-snow.ql-toolbar button:hover,
+.ql-snow .ql-toolbar button:hover {
+  background-color: #f3f4f6;
+}
+
+.ql-snow.ql-toolbar button.ql-active,
+.ql-snow .ql-toolbar button.ql-active {
+  background-color: #e5e7eb;
+}
+
+/* 颜色选择器样式 */
+.ql-color-picker .ql-picker-options {
+  padding: 0.5rem;
+  width: 192px;
+}
+
+.ql-toolbar {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  background-color: white;
+  border-color: #e2e8f0;
+}
+
+.ql-container {
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  background-color: white;
+  border-color: #e2e8f0;
+  min-height: 200px;
+}
+
+.ql-editor {
+  min-height: 200px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.ql-snow.ql-toolbar button,
+.ql-snow .ql-toolbar button {
+  color: #4a5568;
+}
+
+.ql-snow.ql-toolbar button:hover,
+.ql-snow .ql-toolbar button:hover {
+  color: #2d3748;
+}
+
+.ql-snow.ql-toolbar button.ql-active,
+.ql-snow .ql-toolbar button.ql-active {
+  color: #2563eb;
+}
+

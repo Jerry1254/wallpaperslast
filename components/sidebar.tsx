@@ -1,6 +1,8 @@
+"use client"
+
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { ImageIcon, LayoutDashboard, Users } from 'lucide-react'
+import { ImageIcon, LayoutDashboard, Users, Settings } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 interface SidebarProps {
@@ -22,6 +24,11 @@ const menuItems = [
     title: "用户管理",
     icon: Users,
     href: "/users",
+  },
+  {
+    title: "分享页设置",
+    icon: Settings,
+    href: "/settings",
   },
 ]
 
@@ -58,4 +65,3 @@ export function Sidebar({ isOpen }: SidebarProps) {
     </aside>
   )
 }
-
