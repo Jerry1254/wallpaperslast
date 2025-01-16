@@ -18,6 +18,7 @@ import { ConfirmDialog } from "./ui/confirm-dialog"
 import { UploadWallpaperModal } from "./upload-wallpaper-modal"
 import { Share2, Download, Edit, ChevronLeft, ChevronRight } from "lucide-react"
 import { VideoPreview } from "./video-preview"
+import { ImagePreviewModal } from "./image-preview-modal"
 
 interface Wallpaper {
   id: string
@@ -52,6 +53,9 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingWallpaper, setEditingWallpaper] = useState<Wallpaper | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [previewImages, setPreviewImages] = useState<Array<{ url: string, type?: string }>>([])
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewIndex, setPreviewIndex] = useState(0)
   
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE)
 
@@ -231,7 +235,17 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
               return (
                 <TableRow key={wallpaper.id}>
                   <TableCell>
-                    <div className="relative h-[200px] w-[112.5px]">
+                    <div 
+                      className="relative h-[200px] w-[112.5px] cursor-pointer"
+                      onClick={() => {
+                        setPreviewImages(wallpaper.files.map(f => ({ 
+                          url: f.url,
+                          type: f.type
+                        })))
+                        setPreviewIndex(0)
+                        setIsPreviewOpen(true)
+                      }}
+                    >
                       {isVideo ? (
                         <VideoPreview
                           src={file.url}
@@ -385,6 +399,14 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
         mode="edit"
         initialData={editingWallpaper || undefined}
         onSuccess={handleEditSuccess}
+      />
+
+      {/* 图片预览模态框 */}
+      <ImagePreviewModal
+        images={previewImages}
+        initialIndex={previewIndex}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
       />
     </div>
   )

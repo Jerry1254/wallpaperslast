@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { Download } from "lucide-react"
 import { VideoPreview } from "@/components/video-preview"
+import { ImagePreviewModal } from "@/components/image-preview-modal"
 import parse from 'html-react-parser'
 
 interface SharePageData {
@@ -25,6 +26,8 @@ export default function SharePage({ params }: { params: { id: number } }) {
   const [data, setData] = useState<SharePageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewIndex, setPreviewIndex] = useState(0)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -131,9 +134,15 @@ export default function SharePage({ params }: { params: { id: number } }) {
       </Button>
 
       <div className="grid grid-cols-2 gap-4">
-        {data.files.map(file => (
+        {data.files.map((file, index) => (
           <div key={file.id} className="space-y-2">
-            <div className="relative aspect-[9/16] w-full overflow-hidden rounded-lg">
+            <div 
+              className="relative aspect-[9/16] w-full overflow-hidden rounded-lg cursor-pointer"
+              onClick={() => {
+                setPreviewIndex(index)
+                setIsPreviewOpen(true)
+              }}
+            >
               {file.type === 'video/mp4' ? (
                 <VideoPreview
                   src={file.url}
@@ -156,12 +165,20 @@ export default function SharePage({ params }: { params: { id: number } }) {
                 className="w-full"
                 onClick={() => handleDownloadSingle(file)}
               >
-                点击下载单张壁纸
+                {data.buttonText || '点击下载单张壁纸'}
               </Button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* 图片预览模态框 */}
+      <ImagePreviewModal
+        images={data?.files.map(f => ({ url: f.url, type: f.type })) || []}
+        initialIndex={previewIndex}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+      />
     </div>
   )
 }

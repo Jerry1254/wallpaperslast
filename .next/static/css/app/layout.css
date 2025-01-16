@@ -789,6 +789,12 @@ video {
 .top-full {
   top: 100%;
 }
+.bottom-4 {
+  bottom: 1rem;
+}
+.left-4 {
+  left: 1rem;
+}
 .z-10 {
   z-index: 10;
 }
@@ -994,6 +1000,12 @@ video {
 .h-svh {
   height: 100svh;
 }
+.h-\[90vh\] {
+  height: 90vh;
+}
+.h-\[80vh\] {
+  height: 80vh;
+}
 .max-h-96 {
   max-height: 24rem;
 }
@@ -1005,6 +1017,9 @@ video {
 }
 .max-h-screen {
   max-height: 100vh;
+}
+.max-h-full {
+  max-height: 100%;
 }
 .min-h-0 {
   min-height: 0px;
@@ -1093,6 +1108,9 @@ video {
 .w-px {
   width: 1px;
 }
+.w-6 {
+  width: 1.5rem;
+}
 .min-w-0 {
   min-width: 0px;
 }
@@ -1140,6 +1158,9 @@ video {
 }
 .max-w-\[600px\] {
   max-width: 600px;
+}
+.max-w-full {
+  max-width: 100%;
 }
 .flex-1 {
   flex: 1 1 0%;
@@ -1409,6 +1430,9 @@ video {
 .border-dashed {
   border-style: dashed;
 }
+.border-none {
+  border-style: none;
+}
 .border-\[--color-border\] {
   border-color: var(--color-border);
 }
@@ -1502,6 +1526,12 @@ video {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
 }
+.bg-black\/50 {
+  background-color: rgb(0 0 0 / 0.5);
+}
+.bg-black\/90 {
+  background-color: rgb(0 0 0 / 0.9);
+}
 .bg-cover {
   background-size: cover;
 }
@@ -1513,6 +1543,9 @@ video {
 }
 .fill-current {
   fill: currentColor;
+}
+.object-contain {
+  object-fit: contain;
 }
 .object-cover {
   object-fit: cover;
@@ -2102,6 +2135,10 @@ body {
 
 .hover\:bg-secondary\/80:hover {
   background-color: hsl(var(--secondary) / 0.8);
+}
+
+.hover\:bg-white\/20:hover {
+  background-color: rgb(255 255 255 / 0.2);
 }
 
 .hover\:text-accent-foreground:hover {

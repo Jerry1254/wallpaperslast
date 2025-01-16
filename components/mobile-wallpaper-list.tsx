@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
-import { Share2, Trash2 } from "lucide-react"
+import { Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { VideoPreview } from "./video-preview"
 import { useSearchParams } from "next/navigation"
-import { ConfirmDialog } from "./ui/confirm-dialog"
+import { ImagePreviewModal } from "./image-preview-modal"
 
 interface Wallpaper {
   id: string
@@ -29,8 +29,9 @@ export function MobileWallpaperList() {
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [deletingWallpaperId, setDeletingWallpaperId] = useState<string | null>(null)
+  const [previewImages, setPreviewImages] = useState<Array<{ url: string, type?: string }>>([])
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewIndex, setPreviewIndex] = useState(0)
   
   const searchParams = useSearchParams()
   const search = searchParams.get('search')
@@ -95,38 +96,6 @@ export function MobileWallpaperList() {
     }
   }, [])
 
-  // 删除壁纸
-  const handleDelete = async () => {
-    if (!deletingWallpaperId) return
-
-    try {
-      const response = await fetch(`/api/wallpapers/${deletingWallpaperId}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        toast({
-          description: "壁纸已删除",
-        })
-        setCurrentPage(1)
-        fetchWallpapers(1)
-      } else {
-        toast({
-          variant: "destructive",
-          description: "删除失败",
-        })
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        description: "删除失败",
-      })
-    } finally {
-      setIsDeleteDialogOpen(false)
-      setDeletingWallpaperId(null)
-    }
-  }
-
   // 加载更多
   const loadMore = () => {
     if (!isLoading && hasMore) {
@@ -172,7 +141,17 @@ export function MobileWallpaperList() {
 
           return (
             <div key={wallpaper.id} className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="relative aspect-[9/16]">
+              <div 
+                className="relative aspect-[9/16] cursor-pointer"
+                onClick={() => {
+                  setPreviewImages(wallpaper.files.map(f => ({ 
+                    url: f.url,
+                    type: f.type
+                  })))
+                  setPreviewIndex(0)
+                  setIsPreviewOpen(true)
+                }}
+              >
                 {isVideo ? (
                   <VideoPreview
                     src={file.url}
@@ -190,29 +169,15 @@ export function MobileWallpaperList() {
               <div className="p-3 space-y-2">
                 <div className="text-sm font-medium truncate">{wallpaper.name}</div>
                 <div className="text-xs text-gray-500 truncate">{wallpaper.shop_name}</div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleShare(wallpaper)}
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    分享
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => {
-                      setDeletingWallpaperId(wallpaper.id)
-                      setIsDeleteDialogOpen(true)
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    删除
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => handleShare(wallpaper)}
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  分享
+                </Button>
               </div>
             </div>
           )
@@ -231,12 +196,12 @@ export function MobileWallpaperList() {
         <div className="text-center py-4 text-gray-500">暂无数据</div>
       )}
 
-      <ConfirmDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        title="删除壁纸"
-        description="确定要删除这个壁纸吗？此操作不可恢复。"
-        onConfirm={() => deletingWallpaperId && handleDelete()}
+      {/* 图片预览模态框 */}
+      <ImagePreviewModal
+        images={previewImages}
+        initialIndex={previewIndex}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
       />
     </div>
   )
