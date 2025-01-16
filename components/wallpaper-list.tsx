@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Copy, Pencil, Trash } from 'lucide-react'
+import { Copy, Pencil, Trash2 } from 'lucide-react'
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,7 +16,7 @@ import { toast } from "@/components/ui/use-toast"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination"
 import { ConfirmDialog } from "./ui/confirm-dialog"
 import { UploadWallpaperModal } from "./upload-wallpaper-modal"
-import { Share2, Download, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Share2, Download, Edit, ChevronLeft, ChevronRight } from "lucide-react"
 import { VideoPreview } from "./video-preview"
 
 interface Wallpaper {
@@ -134,14 +134,17 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
         toast({
           description: "壁纸已删除",
         })
-        fetchWallpapers()
+        setCurrentPage(1)  // 重置到第一页
+        await fetchWallpapers()  // 等待刷新完成
       } else {
+        const error = await response.json()
         toast({
           variant: "destructive",
-          description: "删除失败",
+          description: error.error || "删除失败",
         })
       }
     } catch (error) {
+      console.error('Delete error:', error)
       toast({
         variant: "destructive",
         description: "删除失败",
