@@ -2,8 +2,11 @@
   "/dashboard/page": "app/dashboard/page.js",
   "/wallpapers/page": "app/wallpapers/page.js",
   "/share/[id]/page": "app/share/[id]/page.js",
-  "/users/page": "app/users/page.js",
   "/login/page": "app/login/page.js",
+  "/settings/page": "app/settings/page.js",
   "/api/wallpapers/route": "app/api/wallpapers/route.js",
+  "/api/settings/route": "app/api/settings/route.js",
+  "/users/page": "app/users/page.js",
+  "/api/users/route": "app/api/users/route.js",
   "/api/shops/route": "app/api/shops/route.js"
 }

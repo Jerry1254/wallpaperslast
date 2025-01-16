@@ -13,17 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { toast } from "@/components/ui/use-toast"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination"
 import { ConfirmDialog } from "./ui/confirm-dialog"
 import { UploadWallpaperModal } from "./upload-wallpaper-modal"
-import { Share2, Download, Edit, Trash2 } from "lucide-react"
+import { Share2, Download, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import { VideoPreview } from "./video-preview"
 
 interface Wallpaper {
@@ -53,15 +46,14 @@ const ITEMS_PER_PAGE = 20
 export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
   const [wallpapers, setWallpapers] = useState<Wallpaper[]>([])
   const [currentPage, setCurrentPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deletingWallpaperId, setDeletingWallpaperId] = useState<string | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingWallpaper, setEditingWallpaper] = useState<Wallpaper | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   
-  const totalPages = Math.ceil(wallpapers.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const currentWallpapers = wallpapers.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE)
 
   // 获取壁纸列表
   const fetchWallpapers = async () => {
@@ -70,17 +62,55 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
       const params = new URLSearchParams()
       if (searchQuery) params.append('search', searchQuery)
       if (shopId) params.append('shopId', String(shopId))
+      params.append('page', String(currentPage))
+      params.append('pageSize', String(ITEMS_PER_PAGE))
       
-      const response = await fetch(`/api/wallpapers?${params.toString()}`)
-      const data = await response.json()
+      const url = `/api/wallpapers?${params.toString()}`
+      console.log('Fetching URL:', url)
       
+      const response = await fetch(url)
+      console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      // 获取原始响应文本
+      const responseText = await response.text()
+      console.log('Raw response:', responseText)
+      
+      // 尝试解析 JSON
+      let data
+      try {
+        data = JSON.parse(responseText)
+        console.log('Parsed response:', data)
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', e)
+        throw new Error('API 响应格式错误')
+      }
+
       if (response.ok) {
-        setWallpapers(Array.isArray(data) ? data : [])
+        if (!Array.isArray(data.data.list)) {
+          console.error('Unexpected API response format:', data)
+          throw new Error('API 返回数据格式错误')
+        }
+        setWallpapers(data.data.list)
+        setTotal(data.data.pagination.total)
       } else {
-        throw new Error(data.error || '获取壁纸列表失败')
+        console.error('API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        })
+        throw new Error(data.error || data.details || '获取壁纸列表失败')
       }
     } catch (error) {
       console.error('Fetch wallpapers error:', error)
+      if (error instanceof Error) {
+        console.error('Full error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          cause: error.cause
+        })
+      }
       toast({
         variant: "destructive",
         description: error instanceof Error ? error.message : "获取壁纸列表失败",
@@ -167,8 +197,14 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
 
   // 初始加载和搜索条件变化时重新获取数据
   useEffect(() => {
+    setCurrentPage(1) // 重置到第一页
     fetchWallpapers()
   }, [searchQuery, shopId])
+
+  // 页码变化时重新获取数据
+  useEffect(() => {
+    fetchWallpapers()
+  }, [currentPage])
 
   return (
     <div className="space-y-4">
@@ -185,7 +221,7 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentWallpapers.map((wallpaper) => {
+            {wallpapers.map((wallpaper) => {
               const file = wallpaper.files[0]
               const isVideo = file.type.startsWith('video/')
 
@@ -281,20 +317,25 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center">
+      {total > 0 && (
+        <div className="flex justify-center mt-4">
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious
-                  href="#"
+                <Button
+                  variant="outline"
                   onClick={(e) => {
                     e.preventDefault()
                     if (currentPage > 1) handlePageChange(currentPage - 1)
                   }}
-                />
+                  disabled={currentPage === 1}
+                  className="gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  上一页
+                </Button>
               </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: Math.max(1, totalPages) }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
                     href="#"
@@ -309,13 +350,18 @@ export function WallpaperList({ searchQuery, shopId }: WallpaperListProps) {
                 </PaginationItem>
               ))}
               <PaginationItem>
-                <PaginationNext
-                  href="#"
+                <Button
+                  variant="outline"
                   onClick={(e) => {
                     e.preventDefault()
                     if (currentPage < totalPages) handlePageChange(currentPage + 1)
                   }}
-                />
+                  disabled={currentPage >= totalPages}
+                  className="gap-1"
+                >
+                  下一页
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </PaginationItem>
             </PaginationContent>
           </Pagination>
