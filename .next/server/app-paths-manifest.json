@@ -1,10 +1,10 @@
 {
+  "/not-found": "app/not-found.js",
   "/wallpapers/page": "app/wallpapers/page.js",
-  "/share/[id]/page": "app/share/[id]/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/login/page": "app/login/page.js",
-  "/settings/page": "app/settings/page.js",
-  "/page": "app/page.js",
   "/api/wallpapers/route": "app/api/wallpapers/route.js",
-  "/api/shops/route": "app/api/shops/route.js"
+  "/api/shops/route": "app/api/shops/route.js",
+  "/api/upload/route": "app/api/upload/route.js",
+  "/api/settings/route": "app/api/settings/route.js",
+  "/share/[id]/page": "app/share/[id]/page.js",
+  "/api/share/route": "app/api/share/route.js"
 }
