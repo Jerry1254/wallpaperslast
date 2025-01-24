@@ -5,7 +5,7 @@ export const createConnection = async () => {
     host: '111.231.24.218',
     port: 3306,
     user: 'wmh',
-    password: 'Wmh@zq7261449',
+    password: 'Wmh@zq761449',
     database: 'wallpaper',
     charset: 'utf8mb4'
   })
@@ -15,7 +15,7 @@ export const db = mysql.createPool({
   host: '111.231.24.218',
   port: 3306,
   user: 'wmh',
-  password: 'Wmh@zq7261449',
+  password: 'Wmh@zq761449',
   database: 'wallpaper',
   charset: 'utf8mb4',
   waitForConnections: true,
