@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "@/components/ui/use-toast"
 import { Upload } from "lucide-react"
+import { uploadFile as uploadToCOS } from "@/lib/cos"
 
 interface FileUploadProgress {
   id: string
@@ -86,30 +87,12 @@ export function FileUploader({ onUpload, maxSize = 100, accept }: FileUploaderPr
       }
       console.log('Thumbnail created:', thumbnail ? 'success' : 'not needed')
 
-      // 创建 FormData
-      const formData = new FormData()
-      formData.append('file', file)
-      console.log('FormData created with file')
+      // 上传到腾讯云 COS
+      console.log('Uploading to COS:', file.name)
+      const url = await uploadToCOS(file)
+      console.log('Upload successful, URL:', url)
 
-      // 上传文件
-      console.log('Sending upload request')
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      })
-
-      console.log('Upload response status:', response.status)
-      const data = await response.json()
-      console.log('Upload response data:', data)
-
-      if (!response.ok) {
-        throw new Error(data.error || '上传失败')
-      }
-
-      const { url } = data
-      console.log('File uploaded successfully:', url)
-
-      // 更新状态为成功
+      // 更新进度为完成
       setUploadProgress(prev => ({
         ...prev,
         [fileId]: {
@@ -119,67 +102,52 @@ export function FileUploader({ onUpload, maxSize = 100, accept }: FileUploaderPr
         }
       }))
 
-      // 回调通知上传完成
-      const fileData = {
+      // 调用回调
+      onUpload({
         id: fileId,
         name: file.name,
-        url,
+        url: url,
         type: file.type,
-        ...(thumbnail && { thumbnail })
-      }
-      console.log('Sending file data to parent:', fileData)
-      onUpload(fileData)
-
-      // 清理进度状态
-      setTimeout(() => {
-        setUploadProgress(prev => {
-          const { [fileId]: _, ...rest } = prev
-          return rest
-        })
-      }, 1000)
+        thumbnail
+      })
 
     } catch (error: any) {
-      console.error('Upload error for file:', file.name, error)
+      console.error('Upload error:', error)
       setUploadProgress(prev => ({
         ...prev,
         [fileId]: {
           ...prev[fileId],
           status: 'error',
-          error: error.message || '上传失败'
+          error: error.message
         }
       }))
 
       toast({
         variant: "destructive",
-        description: `上传失败: ${error.message || '未知错误'}`,
+        description: `上传失败: ${error.message}`,
       })
     }
   }
 
   const onDrop = useCallback(async (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
+    console.log('Files dropped:', { accepted: acceptedFiles, rejected: rejectedFiles })
+
     // 处理被拒绝的文件
-    rejectedFiles.forEach(({ file, errors }) => {
-      const errorMessages = errors.map(error => {
-        if (error.code === 'file-too-large') {
-          return `文件大小超过 ${maxSize}MB`
-        }
-        if (error.code === 'file-invalid-type') {
-          return '不支持的文件类型'
-        }
-        return error.message
+    if (rejectedFiles.length > 0) {
+      rejectedFiles.forEach(({ file, errors }) => {
+        const errorMessages = errors.map(e => e.message).join(', ')
+        toast({
+          variant: "destructive",
+          description: `文件 ${file.name} 无法上传: ${errorMessages}`,
+        })
       })
-      
-      toast({
-        variant: "destructive",
-        description: `${file.name}: ${errorMessages.join(', ')}`,
-      })
-    })
+    }
 
     // 上传接受的文件
     for (const file of acceptedFiles) {
       await uploadFile(file)
     }
-  }, [maxSize, onUpload])
+  }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -188,57 +156,59 @@ export function FileUploader({ onUpload, maxSize = 100, accept }: FileUploaderPr
   })
 
   return (
-    <div className="space-y-4">
+    <div className="w-full">
       <div
         {...getRootProps()}
         className={`
-          border-2 border-dashed rounded-lg p-6
-          flex flex-col items-center justify-center
-          cursor-pointer
-          transition-colors
-          ${isDragActive ? 'border-primary bg-primary/10' : 'border-border'}
+          border-2 border-dashed rounded-lg p-6 cursor-pointer
+          ${isDragActive ? 'border-primary bg-secondary/50' : 'border-border'}
+          hover:border-primary hover:bg-secondary/20 transition-colors
         `}
       >
         <input {...getInputProps()} />
-        <Upload className="w-10 h-10 mb-2 text-muted-foreground" />
-        <div className="text-center space-y-1">
-          <p className="text-sm">
-            拖拽文件到此处，或
-            <Button type="button" variant="link" className="px-1">
-              点击上传
-            </Button>
+        <div className="flex flex-col items-center justify-center gap-2">
+          <Upload className="w-8 h-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground text-center">
+            {isDragActive ? (
+              "放开以上传文件"
+            ) : (
+              <>
+                拖拽文件到此处，或者
+                <Button
+                  variant="link"
+                  className="px-1 text-primary"
+                >
+                  点击选择
+                </Button>
+              </>
+            )}
           </p>
           <p className="text-xs text-muted-foreground">
-            支持的文件类型：图片 (PNG, JPG, GIF) 和视频 (MP4, WebM)
-            <br />
-            单个文件最大 {maxSize}MB
+            最大文件大小: {maxSize}MB
           </p>
         </div>
       </div>
 
-      {/* 上传进度 */}
-      {Object.values(uploadProgress).length > 0 && (
-        <div className="space-y-2">
-          {Object.values(uploadProgress).map((file) => (
-            <div key={file.id} className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="truncate flex-1">{file.name}</span>
-                <span className="ml-2">
-                  {file.status === 'uploading' && `${file.progress}%`}
-                  {file.status === 'error' && '上传失败'}
-                  {file.status === 'success' && '上传完成'}
-                </span>
-              </div>
-              {file.status === 'uploading' && (
-                <Progress value={file.progress} className="h-1" />
-              )}
-              {file.error && (
-                <p className="text-xs text-red-500">{file.error}</p>
-              )}
-            </div>
-          ))}
+      {/* 上传进度显示 */}
+      {Object.values(uploadProgress).map((file) => (
+        <div key={file.id} className="mt-4">
+          <div className="flex justify-between text-sm mb-1">
+            <span className="truncate">{file.name}</span>
+            <span className={file.status === 'error' ? 'text-destructive' : ''}>
+              {file.status === 'uploading' && `${file.progress}%`}
+              {file.status === 'error' && '上传失败'}
+              {file.status === 'success' && '上传完成'}
+            </span>
+          </div>
+          <Progress
+            value={file.progress}
+            className={`h-1 ${file.status === 'error' ? 'bg-destructive' : ''}`}
+          />
+          {file.error && (
+            <p className="text-xs text-destructive mt-1">{file.error}</p>
+          )}
         </div>
-      )}
+      ))}
     </div>
   )
 }

@@ -8,6 +8,7 @@ import {
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Button } from './ui/button'
 import { VideoPreview } from './video-preview'
+import { getDownloadUrl } from '@/lib/cos'
 
 interface ImagePreviewModalProps {
   images: Array<{
@@ -26,6 +27,35 @@ export function ImagePreviewModal({
   onOpenChange,
 }: ImagePreviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [signedUrls, setSignedUrls] = useState<Record<number, string>>({})
+
+  // 获取当前图片的签名 URL
+  useEffect(() => {
+    const getSignedUrlForIndex = async (index: number) => {
+      try {
+        const image = images[index]
+        if (!image) return
+
+        const key = image.url.split('.com/')[1]
+        const signedUrl = await getDownloadUrl(key)
+        setSignedUrls(prev => ({
+          ...prev,
+          [index]: signedUrl as string
+        }))
+      } catch (error) {
+        console.error('Error getting signed URL:', error)
+      }
+    }
+
+    // 获取当前图片的签名 URL
+    getSignedUrlForIndex(currentIndex)
+
+    // 预加载前后图片的签名 URL
+    const prevIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1
+    const nextIndex = currentIndex === images.length - 1 ? 0 : currentIndex + 1
+    getSignedUrlForIndex(prevIndex)
+    getSignedUrlForIndex(nextIndex)
+  }, [currentIndex, images])
 
   // 使用 useEffect 来确保 currentIndex 在有效范围内
   useEffect(() => {
@@ -41,6 +71,7 @@ export function ImagePreviewModal({
 
   const currentImage = images[currentIndex]
   const isVideo = currentImage?.type?.startsWith('video/')
+  const currentSignedUrl = signedUrls[currentIndex]
 
   const handlePrevious = useCallback(() => {
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
@@ -50,18 +81,20 @@ export function ImagePreviewModal({
     setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
   }, [images.length])
 
-  // 键盘事件处理
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') {
-      handlePrevious()
-    } else if (e.key === 'ArrowRight') {
-      handleNext()
-    } else if (e.key === 'Escape') {
-      onOpenChange(false)
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    switch (event.key) {
+      case 'ArrowLeft':
+        handlePrevious()
+        break
+      case 'ArrowRight':
+        handleNext()
+        break
+      case 'Escape':
+        onOpenChange(false)
+        break
     }
-  }, [handlePrevious, handleNext, onOpenChange])
+  }, [handleNext, handlePrevious, onOpenChange])
 
-  // 添加和移除键盘事件监听器
   useEffect(() => {
     if (open) {
       window.addEventListener('keydown', handleKeyDown)
@@ -69,20 +102,27 @@ export function ImagePreviewModal({
     }
   }, [open, handleKeyDown])
 
-  // 如果没有图片，不显示预览
-  if (!images.length || !currentImage) {
-    return null
+  if (!currentSignedUrl) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-screen-lg w-full h-[80vh] p-0">
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full h-full bg-gray-100 animate-pulse" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full h-[90vh] p-0 border-none bg-black/90">
-        <div className="relative w-full h-full flex items-center justify-center">
+      <DialogContent className="max-w-screen-lg w-full h-[80vh] p-0">
+        <div className="relative w-full h-full flex items-center justify-center bg-black">
           {/* 关闭按钮 */}
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 z-50 text-white hover:bg-white/20"
+            className="absolute top-2 right-2 z-50 text-white hover:bg-white/20"
             onClick={() => onOpenChange(false)}
           >
             <X className="h-6 w-6" />
@@ -93,35 +133,27 @@ export function ImagePreviewModal({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute left-4 z-50 text-white hover:bg-white/20"
+              className="absolute left-2 z-50 text-white hover:bg-white/20"
               onClick={handlePrevious}
             >
               <ChevronLeft className="h-8 w-8" />
             </Button>
           )}
 
-          {/* 图片或视频显示区域 */}
-          <div className="w-auto h-full flex items-center justify-center p-4">
-            <div 
-              className="relative h-[80vh]" 
-              style={{ 
-                aspectRatio: '9/16',
-                maxHeight: '80vh',
-              }}
-            >
-              {isVideo ? (
-                <VideoPreview
-                  src={currentImage.url}
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <img
-                  src={currentImage.url}
-                  alt=""
-                  className="h-full w-full object-contain"
-                />
-              )}
-            </div>
+          {/* 图片/视频预览 */}
+          <div className="w-full h-full flex items-center justify-center">
+            {isVideo ? (
+              <VideoPreview
+                url={currentImage.url}
+                className="max-h-full"
+              />
+            ) : (
+              <img
+                src={currentSignedUrl}
+                alt=""
+                className="max-w-full max-h-full object-contain"
+              />
+            )}
           </div>
 
           {/* 下一张按钮 */}
@@ -129,18 +161,11 @@ export function ImagePreviewModal({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-4 z-50 text-white hover:bg-white/20"
+              className="absolute right-2 z-50 text-white hover:bg-white/20"
               onClick={handleNext}
             >
               <ChevronRight className="h-8 w-8" />
             </Button>
-          )}
-
-          {/* 图片计数 */}
-          {images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full">
-              {currentIndex + 1} / {images.length}
-            </div>
           )}
         </div>
       </DialogContent>

@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Download } from "lucide-react"
 import { VideoPreview } from "@/components/video-preview"
 import parse from 'html-react-parser'
+import { getDownloadUrl } from "@/lib/cos"
 
 interface SharePageData {
   id: number
@@ -64,33 +65,61 @@ export default function SharePage({ params }: { params: { code: string } }) {
     }
   }
 
-  const handleDownloadAll = () => {
+  const handleDownloadAll = async () => {
     if (!data?.files) return
     
-    data.files.forEach((file, index) => {
-      const a = document.createElement('a')
-      a.href = file.url
-      a.download = file.name
-      document.body.appendChild(a)
-      
-      setTimeout(() => {
-        a.click()
-        document.body.removeChild(a)
-      }, index * 500)
-    })
+    try {
+      for (const [index, file] of data.files.entries()) {
+        // 从 URL 中提取 COS 的 key
+        const key = file.url.split('.com/')[1]
+        const signedUrl = await getDownloadUrl(key)
+        
+        const a = document.createElement('a')
+        a.href = signedUrl as string
+        a.download = file.name
+        document.body.appendChild(a)
+        
+        setTimeout(() => {
+          a.click()
+          document.body.removeChild(a)
+        }, index * 500)
+      }
 
-    toast({
-      description: `开始下载 ${data.files.length} 个文件`
-    })
+      toast({
+        description: `开始下载 ${data.files.length} 个文件`
+      })
+    } catch (error) {
+      console.error('Download error:', error)
+      toast({
+        variant: "destructive",
+        description: '下载失败，请重试'
+      })
+    }
   }
 
-  const handleDownloadSingle = (file: SharePageData['files'][0]) => {
-    const a = document.createElement('a')
-    a.href = file.url
-    a.download = file.name
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+  const handleDownloadSingle = async (file: SharePageData['files'][0]) => {
+    try {
+      // 从 URL 中提取 COS 的 key
+      const key = file.url.split('.com/')[1]
+      const signedUrl = await getDownloadUrl(key)
+      
+      const a = document.createElement('a')
+      a.href = signedUrl as string
+      a.download = file.name
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+
+      toast({
+        description: '开始下载文件'
+      })
+    } catch (error) {
+      console.error('Download error:', error)
+      toast({
+        variant: "destructive",
+        description: '下载失败，请重试'
+      })
+    }
   }
 
   if (loading) {
@@ -101,70 +130,63 @@ export default function SharePage({ params }: { params: { code: string } }) {
     )
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-red-500">{error}</div>
-      </div>
-    )
-  }
-
-  if (!data) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">分享页不存在</div>
+        <div className="text-center text-red-500">{error || '加载失败'}</div>
       </div>
     )
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">{parse(data.wallpaperName)}</h1>
-      
-      <div className="mb-6">
-        {parse(data.description)}
-      </div>
-      
-      <Button 
-        className="mb-8 w-full" 
-        size="lg"
-        onClick={handleDownloadAll}
-      >
-        <Download className="mr-2 h-5 w-5" />
-        {parse(data.buttonText)}
-      </Button>
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold mb-4">{data.wallpaperName}</h1>
+        
+        {data.description && (
+          <div className="prose mb-6 max-w-none">
+            {parse(data.description)}
+          </div>
+        )}
 
-      <div className="grid grid-cols-2 gap-4">
-        {data.files.map(file => (
-          <div key={file.id} className="space-y-2">
-            <div className="relative aspect-[9/16] w-full overflow-hidden rounded-lg">
-              {file.type === 'video/mp4' ? (
-                <VideoPreview
-                  src={file.url}
-                  className="h-full w-full object-cover"
-                />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {data.files.map((file) => (
+            <div key={file.id} className="relative group">
+              {file.type.startsWith('video/') ? (
+                <VideoPreview url={file.url} />
               ) : (
-                <Image
-                  src={file.url}
-                  alt={file.name}
-                  fill
-                  className="object-cover"
-                />
+                <div className="relative aspect-video">
+                  <Image
+                    src={file.url}
+                    alt={file.name}
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                </div>
               )}
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm truncate flex-1">{parse(file.name)}</span>
               <Button
                 variant="outline"
-                size="icon"
+                size="sm"
+                className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => handleDownloadSingle(file)}
               >
-                <Download className="h-4 w-4" />
+                <Download className="w-4 h-4 mr-2" />
+                下载
               </Button>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        <div className="flex justify-center">
+          <Button
+            size="lg"
+            onClick={handleDownloadAll}
+            className="gap-2"
+          >
+            <Download className="w-5 h-5" />
+            {data.buttonText || '下载全部'}
+          </Button>
+        </div>
       </div>
     </div>
   )

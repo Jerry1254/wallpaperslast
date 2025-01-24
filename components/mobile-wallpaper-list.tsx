@@ -79,7 +79,8 @@ export function MobileWallpaperList() {
       const settingsResult = await settingsResponse.json()
       const shareButtonText = settingsResult.data?.share_button_text || '点击下载'
       
-      const shareUrl = `${window.location.origin}/share/${wallpaper.id}`
+      // 使用生产环境域名
+      const shareUrl = `https://wallpaperslast-v2sh.vercel.app/share/${wallpaper.id}`
       const shareText = `${shareButtonText} ${shareUrl}`
       
       // 复制分享文本

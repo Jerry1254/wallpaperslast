@@ -2,21 +2,37 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { PlayCircle } from 'lucide-react'
+import { getDownloadUrl } from '@/lib/cos'
 
 interface VideoPreviewProps {
-  src: string
+  url: string
   className?: string
   onPlay?: () => void
 }
 
-export function VideoPreview({ src, className, onPlay }: VideoPreviewProps) {
+export function VideoPreview({ url, className, onPlay }: VideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPaused, setIsPaused] = useState(true)
   const [isPreviewReady, setIsPreviewReady] = useState(false)
+  const [signedUrl, setSignedUrl] = useState<string>("")
+
+  useEffect(() => {
+    const getSignedUrl = async () => {
+      try {
+        const key = url.split('.com/')[1]
+        const signed = await getDownloadUrl(key)
+        setSignedUrl(signed as string)
+      } catch (error) {
+        console.error('Error getting signed URL:', error)
+      }
+    }
+    
+    getSignedUrl()
+  }, [url])
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video) return
+    if (!video || !signedUrl) return
 
     // 视频加载后设置时间到第二帧
     const handleLoadedData = () => {
@@ -29,7 +45,7 @@ export function VideoPreview({ src, className, onPlay }: VideoPreviewProps) {
     return () => {
       video.removeEventListener('loadeddata', handleLoadedData)
     }
-  }, [src])
+  }, [signedUrl])
 
   const handleClick = () => {
     if (isPaused && isPreviewReady) {
@@ -39,18 +55,22 @@ export function VideoPreview({ src, className, onPlay }: VideoPreviewProps) {
     }
   }
 
+  if (!signedUrl) {
+    return <div className="w-full h-full bg-gray-100 rounded-lg animate-pulse" />
+  }
+
   return (
     <div className="relative w-full h-full">
       <video
         ref={videoRef}
-        src={src}
-        className={`${className} rounded-lg`}
+        src={signedUrl}
+        className={`${className || ''} rounded-lg w-full h-full object-cover`}
         controls={!isPaused}
       />
       {isPaused && (
         <button
           onClick={handleClick}
-          className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity opacity-0 group-hover:opacity-100"
+          className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors"
         >
           <PlayCircle className="w-12 h-12 text-white" />
         </button>
